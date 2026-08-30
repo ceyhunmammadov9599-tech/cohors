@@ -28,6 +28,12 @@ import javax.inject.Inject
  * MVI ViewModel for the Team & Squad screen: league/team search & selection,
  * squad grouped by position, and injuries/suspensions — all reactive via
  * StateFlow, with one-shot side effects delivered through a Channel.
+ *
+ * Search is filtered client-side against the last successfully fetched
+ * list (allLeagues / allTeams) — typing does NOT trigger a new network
+ * request per keystroke. The API's free-tier plan has a strict per-minute
+ * rate limit, and re-fetching the full league/team list on every keystroke
+ * exhausted it almost instantly, surfacing as "Sunucu hatası" (500/429).
  */
 @HiltViewModel
 class TeamSquadViewModel @Inject constructor(
@@ -48,6 +54,11 @@ class TeamSquadViewModel @Inject constructor(
     private var injuriesJob: Job? = null
 
     private var loadedTeamId: Int? = null
+
+    // Last successfully fetched, unfiltered lists — search filters these
+    // in-memory instead of re-hitting the network on every keystroke.
+    private var allLeagues: List<League> = emptyList()
+    private var allTeams: List<Team> = emptyList()
 
     init {
         loadLeagues()
@@ -89,14 +100,28 @@ class TeamSquadViewModel @Inject constructor(
         loadInjuries(teamId)
     }
 
+    /**
+     * Filters the already-fetched list in memory. No network call is made
+     * here — [loadLeagues] / [loadTeams] are only invoked on initial load,
+     * league selection, and retry.
+     */
     private fun onSearchQueryChanged(query: String) {
         _state.update { it.copy(searchQuery = query) }
         val league = _state.value.selectedLeague
         if (league != null) {
-            loadTeams(league.id, query)
+            _state.update { it.copy(teams = filterToUiState(allTeams, query) { it.name }) }
         } else {
-            loadLeagues(query)
+            _state.update { it.copy(leagues = filterToUiState(allLeagues, query) { it.name }) }
         }
+    }
+
+    private inline fun <T> filterToUiState(
+        list: List<T>,
+        query: String,
+        nameOf: (T) -> String
+    ): UiState<List<T>> {
+        val filtered = if (query.isBlank()) list else list.filter { nameOf(it).contains(query, ignoreCase = true) }
+        return if (filtered.isEmpty()) UiState.Empty else UiState.Success(filtered)
     }
 
     private fun onLeagueSelected(league: League) {
@@ -110,11 +135,12 @@ class TeamSquadViewModel @Inject constructor(
                 injuries = UiState.Empty
             )
         }
-        loadTeams(league.id, null)
+        loadTeams(league.id)
     }
 
     private fun onClearLeagueSelection() {
         teamsJob?.cancel()
+        allTeams = emptyList()
         _state.update {
             it.copy(
                 selectedLeague = null,
@@ -123,7 +149,8 @@ class TeamSquadViewModel @Inject constructor(
                 selectedTeam = null
             )
         }
-        loadLeagues(null)
+        // Leagues were already fetched once; just re-show the full list.
+        _state.update { it.copy(leagues = filterToUiState(allLeagues, "") { it.name }) }
     }
 
     private fun onTeamSelected(team: Team) {
@@ -141,15 +168,19 @@ class TeamSquadViewModel @Inject constructor(
                 loadSquad(team.id)
                 loadInjuries(team.id)
             }
-            league != null -> loadTeams(league.id, _state.value.searchQuery)
-            else -> loadLeagues(_state.value.searchQuery)
+            league != null -> loadTeams(league.id)
+            else -> loadLeagues()
         }
     }
 
-    private fun loadLeagues(query: String? = null) {
+    /** Fetches the full league list once. Does not take a search query. */
+    private fun loadLeagues() {
         leaguesJob?.cancel()
-        leaguesJob = getLeaguesAndTeamsUseCase.leagues(searchQuery = query)
+        leaguesJob = getLeaguesAndTeamsUseCase.leagues()
             .onEach { resource ->
+                if (resource is Resource.Success) {
+                    allLeagues = resource.data
+                }
                 _state.update { it.copy(leagues = resource.toUiState { list -> list.isEmpty() }) }
                 if (resource is Resource.Error) {
                     _sideEffect.send(TeamSquadSideEffect.ShowSnackbar(resource.message))
@@ -158,10 +189,14 @@ class TeamSquadViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun loadTeams(leagueId: Int, query: String? = null, season: Int = currentSeasonYear()) {
+    /** Fetches the full team list for a league once. Does not take a search query. */
+    private fun loadTeams(leagueId: Int, season: Int = currentSeasonYear()) {
         teamsJob?.cancel()
-        teamsJob = getLeaguesAndTeamsUseCase.teams(leagueId = leagueId, season = season, searchQuery = query)
+        teamsJob = getLeaguesAndTeamsUseCase.teams(leagueId = leagueId, season = season)
             .onEach { resource ->
+                if (resource is Resource.Success) {
+                    allTeams = resource.data
+                }
                 _state.update { it.copy(teams = resource.toUiState { list -> list.isEmpty() }) }
                 if (resource is Resource.Error) {
                     _sideEffect.send(TeamSquadSideEffect.ShowSnackbar(resource.message))
@@ -174,7 +209,9 @@ class TeamSquadViewModel @Inject constructor(
         squadJob?.cancel()
         squadJob = getTeamSquadUseCase(teamId)
             .onEach { resource ->
-                _state.update { it.copy(squadByPosition = resource.toUiState { map -> map.isEmpty() }) }
+                _state.update {
+                    it.copy(squadByPosition = resource.toUiState { map -> map.isEmpty() })
+                }
                 if (resource is Resource.Error) {
                     _sideEffect.send(TeamSquadSideEffect.ShowSnackbar(resource.message))
                 }
