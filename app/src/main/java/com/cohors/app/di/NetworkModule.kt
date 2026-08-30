@@ -25,7 +25,9 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://api-football-v1.p.rapidapi.com/v3/"
+    // Direct api-football.com (api-sports.io) endpoint — used when the key
+    // is an api-football.com dashboard key (not a RapidAPI marketplace key).
+    private const val BASE_URL = "https://v3.football.api-sports.io/"
     private const val CACHE_SIZE_BYTES: Long = 10 * 1024 * 1024 // 10 MB
 
     @Provides
@@ -39,8 +41,7 @@ object NetworkModule {
     @Named("AuthInterceptor")
     fun provideAuthInterceptor(): Interceptor = Interceptor { chain ->
         val request = chain.request().newBuilder()
-            .addHeader("X-RapidAPI-Key", BuildConfig.API_FOOTBALL_KEY)
-            .addHeader("X-RapidAPI-Host", BuildConfig.API_FOOTBALL_HOST)
+            .addHeader("x-apisports-key", BuildConfig.API_FOOTBALL_KEY)
             .build()
         chain.proceed(request)
     }
