@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pitch_green">#FF1B6E3A</color>
+    <color name="pitch_green_dark">#FF0D4D24</color>
+    <color name="chalk_white">#FFF5F5F5</color>
+    <color name="whistle_yellow">#FFFFD600</color>
+    <color name="card_red">#FFD32F2F</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
