@@ -63,7 +63,13 @@ object NetworkModule {
                 val caps = cm.getNetworkCapabilities(network)
                 caps != null && caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
             } catch (e: Exception) {
-                false
+                // Fail-open: if the connectivity check itself fails (e.g. a
+                // missing permission or OEM quirk), assume online so the
+                // request still hits the network instead of being forced
+                // into a cache-only path that returns a synthetic 504 when
+                // the cache is empty (this previously masqueraded as
+                // "Sunucu hatası" on every request).
+                true
             }
             if (!isOnline) {
                 request = request.newBuilder()
