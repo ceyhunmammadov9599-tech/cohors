@@ -237,5 +237,23 @@ class TeamSquadViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun currentSeasonYear(): Int = Calendar.getInstance().get(Calendar.YEAR)
+    /**
+     * The api-football.com FREE plan only allows querying the `season`
+     * param for years 2022-2024 (confirmed via the API's own
+     * `errors.plan` response for any other year — it returns HTTP 200
+     * with an empty result set, not an error, so it silently looked like
+     * "no teams in this league"). Using the real current year here
+     * always returned zero teams/injuries on a free-tier key.
+     *
+     * Capping at the latest free-plan-accessible season fixes that. If
+     * the plan is ever upgraded, bump/remove this cap.
+     */
+    private fun currentSeasonYear(): Int {
+        val realYear = Calendar.getInstance().get(Calendar.YEAR)
+        return minOf(realYear, FREE_PLAN_MAX_SEASON)
+    }
+
+    private companion object {
+        const val FREE_PLAN_MAX_SEASON = 2024
+    }
 }
