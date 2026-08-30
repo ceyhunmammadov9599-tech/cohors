@@ -1,9 +1,12 @@
 package com.cohors.app.data.repository
 
 import com.cohors.app.core.util.Resource
+import com.cohors.app.data.local.dao.CacheDao
 import com.cohors.app.data.remote.api.ApiFootballService
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.flow.toList
 import okhttp3.OkHttpClient
@@ -23,20 +26,25 @@ import java.util.concurrent.TimeUnit
  * Repository tests using a real [MockWebServer] instance — verifies that
  * [FootballRepositoryImpl] correctly parses successful API-Football
  * responses into domain models, and maps HTTP error scenarios (404, 500,
- * timeout) into user-facing [Resource.Error] messages via `resourceFlow`.
+ * timeout) into user-facing [Resource.Error] messages.
+ *
+ * CacheDao is mocked to return null (no cache) so that error paths
+ * produce Resource.Error rather than falling back to cached data.
  */
 class FootballRepositoryImplTest {
 
     private lateinit var mockWebServer: MockWebServer
     private lateinit var apiService: ApiFootballService
     private lateinit var repository: FootballRepositoryImpl
+    private lateinit var mockCacheDao: CacheDao
+    private lateinit var moshi: Moshi
 
     @Before
     fun setUp() {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val okHttpClient = OkHttpClient.Builder()
             .connectTimeout(1, TimeUnit.SECONDS)
             .readTimeout(500, TimeUnit.MILLISECONDS)
@@ -49,7 +57,23 @@ class FootballRepositoryImplTest {
             .build()
 
         apiService = retrofit.create(ApiFootballService::class.java)
-        repository = FootballRepositoryImpl(apiService)
+        mockCacheDao = mockk()
+        // Default: all cache lookups return null (no cached data)
+        coEvery { mockCacheDao.getLeagueCache(any()) } returns null
+        coEvery { mockCacheDao.getTeamCache(any()) } returns null
+        coEvery { mockCacheDao.getSquadCache(any()) } returns null
+        coEvery { mockCacheDao.getLineupCache(any()) } returns null
+        coEvery { mockCacheDao.getFixtureCache(any()) } returns null
+        coEvery { mockCacheDao.getInjuryCache(any()) } returns null
+        // Allow cache writes to be no-ops
+        coEvery { mockCacheDao.putLeagueCache(any()) } returns Unit
+        coEvery { mockCacheDao.putTeamCache(any()) } returns Unit
+        coEvery { mockCacheDao.putSquadCache(any()) } returns Unit
+        coEvery { mockCacheDao.putLineupCache(any()) } returns Unit
+        coEvery { mockCacheDao.putFixtureCache(any()) } returns Unit
+        coEvery { mockCacheDao.putInjuryCache(any()) } returns Unit
+
+        repository = FootballRepositoryImpl(apiService, mockCacheDao, moshi)
     }
 
     @After

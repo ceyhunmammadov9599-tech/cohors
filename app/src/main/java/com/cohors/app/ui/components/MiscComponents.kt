@@ -54,6 +54,7 @@ fun PopularLeagueChipsRow(onChipClick: (String) -> Unit, modifier: Modifier = Mo
 }
 
 /** Section header for a squad position group ("Kaleci", "Defans", ...). */
+@Suppress("DEPRECATION")
 @Composable
 fun PositionHeader(position: PlayerPosition, modifier: Modifier = Modifier) {
     val (label, icon) = when (position) {

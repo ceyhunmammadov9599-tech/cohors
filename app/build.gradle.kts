@@ -10,14 +10,14 @@ plugins {
 
 android {
     namespace = "com.cohors.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.cohors.app"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 7
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -35,8 +35,14 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -68,6 +74,7 @@ android {
     packaging {
         resources {
             excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/*.kotlin_module"
         }
     }
 }
@@ -117,6 +124,11 @@ dependencies {
 
     // Core
     implementation(libs.core.ktx)
+
+    // Room (offline cache)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
 
     // ---- Unit tests (src/test) ----
     testImplementation(libs.junit)

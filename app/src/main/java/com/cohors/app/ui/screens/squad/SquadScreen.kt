@@ -24,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -71,8 +72,16 @@ fun SquadScreen(
         }
     }
 
-    val injuredIds = (state.injuries as? UiState.Success)?.data?.injuries?.mapNotNull { it.playerId }?.toSet().orEmpty()
-    val suspendedIds = (state.injuries as? UiState.Success)?.data?.suspensions?.mapNotNull { it.playerId }?.toSet().orEmpty()
+    val injuredIds by remember(state.injuries) {
+        derivedStateOf {
+            (state.injuries as? UiState.Success)?.data?.injuries?.mapNotNull { it.playerId }?.toSet().orEmpty()
+        }
+    }
+    val suspendedIds by remember(state.injuries) {
+        derivedStateOf {
+            (state.injuries as? UiState.Success)?.data?.suspensions?.mapNotNull { it.playerId }?.toSet().orEmpty()
+        }
+    }
 
     Scaffold(
         topBar = {

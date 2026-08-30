@@ -20,6 +20,7 @@ class GetMatchLineupUseCase @Inject constructor(
     private val repository: FootballRepository
 ) {
 
+    @androidx.compose.runtime.Immutable
     data class MatchLineupResult(
         val fixture: Fixture,
         val lineups: List<TeamLineup>

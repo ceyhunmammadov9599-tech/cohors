@@ -17,6 +17,7 @@ class GetInjuriesAndSuspensionsUseCase @Inject constructor(
     private val repository: FootballRepository
 ) {
 
+    @androidx.compose.runtime.Immutable
     data class InjurySuspensionResult(
         val injuries: List<Injury>,
         val suspensions: List<Injury>

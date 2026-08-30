@@ -1,10 +1,10 @@
 [versions]
-agp = "8.5.0"
-kotlin = "2.0.20"
-kapt = "2.0.20"
+agp = "8.5.2"
+kotlin = "2.0.21"
+kapt = "2.0.21"
 hilt = "2.52"
 hiltNavigation = "1.2.0"
-composeBom = "2024.09.00"
+composeBom = "2024.09.03"
 lifecycle = "2.8.6"
 navigation = "2.8.0"
 retrofit = "2.11.0"
@@ -15,6 +15,7 @@ serializationConverter = "1.0.0"
 coroutines = "1.8.1"
 coil = "2.7.0"
 accompanist = "0.34.0"
+room = "2.6.1"
 
 # Testing
 junit = "4.13.2"
@@ -70,6 +71,11 @@ accompanist-systemuicontroller = { group = "com.google.accompanist", name = "acc
 
 # Core
 core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.13.1" }
+
+# Room (offline cache)
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

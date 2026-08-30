@@ -1,11 +1,14 @@
 package com.cohors.app.domain.model
 
+import androidx.compose.runtime.Immutable
+
 /**
  * Clean domain models consumed by ViewModel/UI layers.
- * These are fully decoupled from the API-Football DTO shape —
- * no nullable-everything, no raw JSON field names.
+ * All models are annotated @Immutable to help the Compose compiler
+ * skip recomposition when the same instance is passed again.
  */
 
+@Immutable
 data class League(
     val id: Int,
     val name: String,
@@ -16,6 +19,7 @@ data class League(
     val currentSeasonYear: Int?
 )
 
+@Immutable
 data class Team(
     val id: Int,
     val name: String,
@@ -28,10 +32,12 @@ data class Team(
     val venueImageUrl: String?
 )
 
+@Immutable
 enum class PlayerPosition {
     GOALKEEPER, DEFENDER, MIDFIELDER, ATTACKER, UNKNOWN
 }
 
+@Immutable
 data class SquadPlayer(
     val id: Int,
     val name: String,
@@ -41,6 +47,7 @@ data class SquadPlayer(
     val photoUrl: String?
 )
 
+@Immutable
 data class Fixture(
     val id: Int,
     val dateIso: String?,
@@ -61,14 +68,16 @@ data class Fixture(
         get() = statusShort == "NS" || statusShort == "TBD"
 }
 
+@Immutable
 data class LineupPlayer(
     val id: Int,
     val name: String,
     val shirtNumber: Int?,
-    val positionCode: String?, // G, D, M, F
-    val gridPosition: String?  // e.g. "3:4:3" grid coordinate
+    val positionCode: String?,
+    val gridPosition: String?
 )
 
+@Immutable
 data class TeamLineup(
     val teamId: Int?,
     val teamName: String?,
@@ -78,6 +87,7 @@ data class TeamLineup(
     val substitutes: List<LineupPlayer>
 )
 
+@Immutable
 data class Injury(
     val playerId: Int?,
     val playerName: String,

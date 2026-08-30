@@ -1,5 +1,6 @@
 package com.cohors.app.presentation.teamsquad
 
+import androidx.compose.runtime.Stable
 import com.cohors.app.domain.model.League
 import com.cohors.app.domain.model.PlayerPosition
 import com.cohors.app.domain.model.SquadPlayer
@@ -14,7 +15,10 @@ enum class SquadTab {
 /**
  * Aggregate screen state for the Team & Squad screen (league/team
  * selection + squad list + injuries/suspensions tab), MVI-style.
+ * Annotated @Stable so the Compose compiler can determine its
+ * stability even though UiState is a sealed interface.
  */
+@Stable
 data class TeamSquadScreenState(
     val searchQuery: String = "",
     val leagues: UiState<List<League>> = UiState.Loading,
@@ -26,7 +30,6 @@ data class TeamSquadScreenState(
     val selectedTab: SquadTab = SquadTab.SQUAD
 )
 
-/** User-triggered interactions on the Team & Squad screen. */
 sealed interface TeamSquadUiEvent {
     data class OnSearchQueryChanged(val query: String) : TeamSquadUiEvent
     data class OnLeagueSelected(val league: League) : TeamSquadUiEvent
@@ -37,7 +40,6 @@ sealed interface TeamSquadUiEvent {
     data object OnRefresh : TeamSquadUiEvent
 }
 
-/** One-shot events the screen should react to exactly once. */
 sealed interface TeamSquadSideEffect {
     data class ShowSnackbar(val message: String) : TeamSquadSideEffect
     data class NavigateToLineup(val teamId: Int) : TeamSquadSideEffect
